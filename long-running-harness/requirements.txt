@@ -1,0 +1,4 @@
+# Long-Running Agent Harness Dependencies
+# https://github.com/anthropics/claude-quickstarts/tree/main/autonomous-coding
+
+claude-code-sdk>=0.0.25

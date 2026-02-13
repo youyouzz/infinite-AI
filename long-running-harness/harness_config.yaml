@@ -1,0 +1,117 @@
+# Long-Running Agent Harness Configuration
+# Reference: https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents
+# Code: https://github.com/anthropics/claude-quickstarts/tree/main/autonomous-coding
+
+harness:
+  name: "Long-Running Agent Harness"
+  version: "1.0.0"
+  description: "Two-agent pattern (Initializer + Coding) for multi-context-window autonomous development"
+
+# Agent phases (order: requirements_analyst → initializer → coding)
+agents:
+  requirements_analyst:
+    role: "Phase 0 - Requirements Analysis & Refinement (before feature_list)"
+    trigger: "First run, no refined_requirements.md"
+    responsibilities:
+      - "Read app_spec.txt (user's raw request)"
+      - "Analyze completeness, clarity, consistency, scope, non-functional aspects"
+      - "Expand into structured detailed spec"
+      - "Write refined_requirements.md for user review"
+    outputs:
+      - "refined_requirements.md"
+    user_action: "Review refined_requirements.md; run again with --approved to continue"
+
+  initializer:
+    role: "Session 1 - Environment Setup (runs after user approves refined spec)"
+    trigger: "refined_requirements.md exists and --approved"
+    responsibilities:
+      - "Read app_spec.txt (copied from refined_requirements.md) and create feature_list.json (200+ features)"
+      - "Create init.sh for dev environment"
+      - "Initialize git repository"
+      - "Set up project structure"
+    outputs:
+      - "feature_list.json"
+      - "init.sh"
+      - "claude-progress.txt"
+      - "Initial git commit"
+
+  coding:
+    role: "Session 2+ - Incremental Development"
+    responsibilities:
+      - "Get bearings (pwd, read progress, git log)"
+      - "Start servers, run verification tests"
+      - "Implement ONE feature at a time"
+      - "Verify with browser automation"
+      - "Update feature_list.json (passes field only)"
+      - "Commit progress and update claude-progress.txt"
+    session_start_steps:
+      - "pwd"
+      - "Read claude-progress.txt"
+      - "Read feature_list.json"
+      - "git log --oneline -20"
+      - "Run init.sh and verify app works"
+
+# Failure mode solutions (from Anthropic article)
+failure_modes:
+  premature_completion:
+    problem: "Agent declares project done too early"
+    solution: "Feature list forces incremental work; never mark complete without all tests passing"
+  undocumented_state:
+    problem: "Agent leaves bugs or undocumented progress"
+    solution: "Mandatory git commits + claude-progress.txt at session end"
+  premature_feature_pass:
+    problem: "Agent marks features done without testing"
+    solution: "Require browser automation verification; only then set passes: true"
+  lost_context:
+    problem: "Agent doesn't know how to run the app"
+    solution: "init.sh created by initializer; coding agent reads it first"
+
+# File specifications
+artifacts:
+  refined_requirements:
+    path: "refined_requirements.md"
+    format: "markdown"
+    purpose: "Detailed spec for user review; after approval becomes app_spec for Initializer"
+
+  feature_list:
+    path: "feature_list.json"
+    format: "json"
+    schema:
+      - "category: functional|style"
+      - "description: string"
+      - "steps: string[]"
+      - "passes: boolean"
+    rules: "Only modify 'passes' field; never remove or edit tests"
+
+  progress:
+    path: "claude-progress.txt"
+    format: "plain text"
+    content: "Session summaries, next steps, completion status"
+
+  init_script:
+    path: "init.sh"
+    format: "shell script"
+    purpose: "Install deps, start servers, print access info"
+
+# Claude SDK settings
+sdk:
+  model: "claude-sonnet-4-5-20250929"
+  max_turns: 1000
+  builtin_tools:
+    - Read
+    - Write
+    - Edit
+    - Glob
+    - Grep
+    - Bash
+  mcp_servers:
+    puppeteer:
+      command: "npx"
+      args: ["puppeteer-mcp-server"]
+      purpose: "Browser automation for end-to-end testing"
+
+# Security
+security:
+  sandbox: true
+  filesystem_scope: "project directory only"
+  bash_allowlist: "see security.py"

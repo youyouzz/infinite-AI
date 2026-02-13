@@ -1,0 +1,44 @@
+# Application Specification Template
+
+Edit this file to specify the application you want the long-running agent to build.
+This is the source of truth for the initializer agent.
+
+---
+
+## Project Name
+TODO App
+
+## Description
+Build a fully functional todo application with a clean, modern interface.
+Support task creation, completion, editing, deletion, and filtering.
+
+## Tech Stack
+- Frontend: React with Vite, Tailwind CSS
+- Backend: Node.js with Express
+- Database: SQLite (optional, or localStorage for simplicity)
+
+## Core Features
+1. Add new todo items
+2. Mark items as complete/incomplete
+3. Edit existing items
+4. Delete items
+5. Filter: All / Active / Completed
+6. Persist data (localStorage or DB)
+7. Responsive design
+
+## UI Requirements
+- Clean, minimal design
+- Dark mode support
+- Smooth animations
+- Accessible (keyboard navigation)
+
+## API Endpoints (if using backend)
+- GET /api/todos - List all todos
+- POST /api/todos - Create todo
+- PUT /api/todos/:id - Update todo
+- DELETE /api/todos/:id - Delete todo
+
+---
+
+To build a different app (e.g., claude.ai clone), replace this entire file with your specification.
+The initializer agent will read it and generate 200+ feature tests in feature_list.json.
